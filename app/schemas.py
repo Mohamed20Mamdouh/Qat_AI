@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 
 class FrontOCRData(BaseModel):
     first_name: Optional[str] = ""
@@ -24,7 +24,7 @@ class StorageInfo(BaseModel):
 
 class IDVerificationResponse(BaseModel):
     is_valid: bool
-    message: str
+    reasons: List[str]
     storage_info: Optional[StorageInfo] = None
     front_data: Optional[FrontOCRData] = None
     back_data: Optional[BackOCRData] = None

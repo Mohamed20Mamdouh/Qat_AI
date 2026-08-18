@@ -188,34 +188,40 @@ async def verify_full_id(
                 back_data[key] = convert_arabic_numbers_to_english(value)
 
         back_nid_clean = re.sub(r'\D', '', str(back_data.get("back_nid", "")))
-
-        # Validation Logic
-        is_logically_valid = True
-        rejection_reason = "تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح"
-
+        
+        rejection_reasons = []
         if not first_name or first_name in ["غير واضح", "مجهول", "None", "غير مقروء"]:
-            is_logically_valid, rejection_reason = False, "اسم الشخص في وجه البطاقة غير واضح أو غير مقروء بوضوح."
-        elif not address or address in ["غير واضح", "مجهول", "None", "غير مقروء"]:
-            is_logically_valid, rejection_reason = False, "عنوان البطاقة غير واضح أو غير مقروء."
-        elif len(clean_nid) != 14:
-            is_logically_valid, rejection_reason = False, "الرقم القومي الأمامي غير صالح أو غير مكتمل."
-        elif clean_nid != back_nid_clean:
-            is_logically_valid, rejection_reason = False, "الرقم القومي في وجه البطاقة لا يتطابق مع الرقم القومي في ظهر البطاقة!"
-        elif not re.match(r'^[A-Z]{2}\d{7}$', laser_number):
-            is_logically_valid, rejection_reason = False, f"فشل التحقق: رقم المصنع غير صالح ({laser_number})."
-        elif not age_valid:
-            is_logically_valid, rejection_reason = False, "لا يمكن التسجيل كمتبرع. يجب أن يكون عمرك من 18 إلى 60 عامًا."
-        else:
-            marital_status = str(back_data.get("marital_status", "")).strip()
-            spouse_name = str(back_data.get("spouse_name", "")).strip()
-            if "أعزب" in marital_status or "آنسة" in marital_status:
-                if spouse_name and spouse_name not in ["لا يوجد", "none", "None", ""]:
-                    is_logically_valid, rejection_reason = False, "الحالة الاجتماعية 'أعزب/آنسة' ومع ذلك يوجد اسم زوج مسجل."
+            rejection_reasons.append("اسم الشخص في وجه البطاقة غير واضح أو غير مقروء بوضوح.")
+            
+        if not address or address in ["غير واضح", "مجهول", "None", "غير مقروء"]:
+            rejection_reasons.append("عنوان البطاقة غير واضح أو غير مقروء.")
+
+        if len(clean_nid) != 14:
+            rejection_reasons.append("الرقم القومي الأمامي غير صالح أو غير مكتمل.")
+
+        if clean_nid != back_nid_clean:
+            rejection_reasons.append("الرقم القومي في وجه البطاقة لا يتطابق مع الرقم القومي في ظهر البطاقة!")
+
+        if not re.match(r'^[A-Z]{2}\d{7}$', laser_number):
+            rejection_reasons.append(f"فشل التحقق: رقم المصنع غير صالح ({laser_number}).")
+
+        if not age_valid:
+            rejection_reasons.append("لا يمكن التسجيل كمتبرع. يجب أن يكون عمرك من 18 إلى 60 عامًا.")
+
+        marital_status = str(back_data.get("marital_status", "")).strip()
+        spouse_name = str(back_data.get("spouse_name", "")).strip()
+        if "أعزب" in marital_status or "آنسة" in marital_status:
+            if spouse_name and spouse_name not in ["لا يوجد", "none", "None", ""]:
+                rejection_reasons.append("الحالة الاجتماعية 'أعزب/آنسة' ومع ذلك يوجد اسم زوج مسجل.")
+        is_logically_valid = len(rejection_reasons) == 0
+        if is_logically_valid:
+            rejection_reasons = ["تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح"]
+
 
         # Response payload
         response_payload = {
             "is_valid": is_logically_valid,
-            "message": rejection_reason,
+            "reasons": rejection_reasons,
             "storage_info": {
                 "front_card_path": str(front_card_path),
                 "back_card_path": str(back_card_path),
