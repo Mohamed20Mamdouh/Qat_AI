@@ -30,7 +30,6 @@ class RankingResponse(BaseModel):
     request_id: int
     ranked_candidates: List[RankedCandidate]
     recommended_notification_count: int
-    expansion_step: int
 
 def calculate_candidate_score(candidate: Candidate, max_distance: float = 50.0) -> float:
     trust_score = (candidate.trust_score / 100) * 0.45
