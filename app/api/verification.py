@@ -21,7 +21,7 @@ router = APIRouter()
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
     expected_key = os.getenv("X-AI-API-KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
-        return JSONResponse(status_code=401, content={"details": "Unauthorized: Invalid or missing API Key"})
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized: Invalid or missing API Key"})
     return x_ai_api_key
 
 def resize_image_if_needed(img_cv, max_width=1280):
@@ -64,7 +64,7 @@ async def verify_full_id(
 
     allowed_types = {"image/jpeg", "image/png", "image/jpg"}
     if front_id.content_type not in allowed_types or back_id.content_type not in allowed_types:
-        return JSONResponse(status_code=400, content={"details": "عفوًا، الملفات المرفوعة يجب أن تكون صورًا (JPEG, PNG)."})
+        return JSONResponse(status_code=400, content={"detail": "عفوًا، الملفات المرفوعة يجب أن تكون صورًا (JPEG, PNG)."})
 
     try:
         front_contents, back_contents = await asyncio.gather(front_id.read(), back_id.read())
@@ -134,21 +134,28 @@ async def verify_full_id(
 
         is_logically_valid = len(rejection_reasons) == 0
 
-        return {
-            "is_valid": is_logically_valid,
-            "message": ["تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح"] if is_logically_valid else rejection_reasons,
-            "front_data": {
-                "first_name": first_name,
-                "second_name": front_data.get("second_name", ""),
-                "nid": clean_nid,
-                "dob": dob,
-                "gender": gender,
-            } if is_logically_valid else None
-        }
+        if is_logically_valid:
+            return {
+                "is_valid": True,
+                "message": ["تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح"],
+                "front_data": {
+                    "first_name": first_name,
+                    "second_name": front_data.get("second_name", ""),
+                    "nid": clean_nid,
+                    "dob": dob,
+                    "gender": gender,
+                }
+            }
+        else:
+            return {
+                "is_valid": False,
+                "reasons": rejection_reasons,
+                "front_data": None
+            }
 
     except json.JSONDecodeError:
-        return JSONResponse(status_code=422, content={"details": "فشل في قراءة البيانات المستخرجة من البطاقة."})
+        return JSONResponse(status_code=422, content={"detail": "فشل في قراءة البيانات المستخرجة من البطاقة."})
     except ValueError as ve:
-        return JSONResponse(status_code=422, content={"details": str(ve)})
+        return JSONResponse(status_code=422, content={"detail": str(ve)})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"details": f"حدث خطأ داخلي: {str(e)}"})
+        return JSONResponse(status_code=500, content={"detail": f"حدث خطأ داخلي: {str(e)}"})
