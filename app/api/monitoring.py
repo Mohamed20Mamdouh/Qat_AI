@@ -6,7 +6,7 @@ import os
 router = APIRouter()
 
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
-    expected_key = os.getenv("X-AI-API-KEY") 
+    expected_key = os.getenv("X_AI_API_KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid or missing API Key")
     return x_ai_api_key
@@ -25,10 +25,10 @@ class MonitoringResponse(BaseModel):
     status: str
     user_id: int
     risk_score: int
-    recommended_action: str
+    recommended_action: Literal["auto_ban", "flagged_for_review", "safe"]
     reasons: List[str]
 
-def analyze_user_risk(data: UserActivity) -> tuple[int, str, List[str]]:
+def analyze_user_risk(data: UserActivity) -> tuple[int, Literal["auto_ban", "flagged_for_review", "safe"], List[str]]:
     if data.role == "admin":
         return 0, "safe", ["Admin - مستثنى من الفحص"]
 

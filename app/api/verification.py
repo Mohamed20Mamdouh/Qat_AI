@@ -21,7 +21,7 @@ client = genai.Client()
 router = APIRouter()
 
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
-    expected_key = os.getenv("X-AI-API-KEY") 
+    expected_key = os.getenv("X_AI_API_KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
         return JSONResponse(status_code=401, content={"details": "Unauthorized: Invalid or missing API Key"})
     return x_ai_api_key
