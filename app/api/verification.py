@@ -7,8 +7,6 @@ from google.genai import types
 from PIL import Image
 import io
 import json
-import uuid
-from pathlib import Path
 import cv2
 import numpy as np
 import re
@@ -21,18 +19,10 @@ client = genai.Client()
 router = APIRouter()
 
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
-    expected_key = os.getenv("X_AI_API_KEY") 
+    expected_key = os.getenv("X-AI-API-KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
         return JSONResponse(status_code=401, content={"details": "Unauthorized: Invalid or missing API Key"})
     return x_ai_api_key
-
-STORAGE_DIRS = {
-    "front": Path("app/storage/id_cards"),
-    "back": Path("app/storage/id_cards_back"),
-    "faces": Path("app/storage/person_faces")
-}
-for path in STORAGE_DIRS.values():
-    path.mkdir(parents=True, exist_ok=True)
 
 def resize_image_if_needed(img_cv, max_width=1280):
     h, w = img_cv.shape[:2]
@@ -51,14 +41,6 @@ def decode_national_id(nid: str):
         return f"{day}-{month}-{year}", gender
     except Exception:
         return None, None
-
-def extract_person_face(img_cv, save_path: Path):
-    try:
-        h_img, w_img, _ = img_cv.shape
-        face_img = img_cv[int(h_img * 0.12):int(h_img * 0.62), int(w_img * 0.08):int(w_img * 0.32)]
-        cv2.imwrite(str(save_path), face_img)
-    except Exception:
-        pass
 
 def convert_arabic_numbers_to_english(text: str) -> str:
     return str(text).translate(str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")) if text else ""
@@ -86,22 +68,14 @@ async def verify_full_id(
 
     try:
         front_contents, back_contents = await asyncio.gather(front_id.read(), back_id.read())
-        file_id = str(uuid.uuid4())[:8]
         
-        front_card_path = STORAGE_DIRS["front"] / f"card_front_{file_id}.jpg"
-        back_card_path = STORAGE_DIRS["back"] / f"card_back_{file_id}.jpg"
-        face_path = STORAGE_DIRS["faces"] / f"face_{file_id}.jpg"
-
-        front_card_path.write_bytes(front_contents)
-        back_card_path.write_bytes(back_contents)
-
         def process_images(front_bytes, back_bytes):
             front_cv = cv2.imdecode(np.frombuffer(front_bytes, np.uint8), cv2.IMREAD_COLOR)
             back_cv = cv2.imdecode(np.frombuffer(back_bytes, np.uint8), cv2.IMREAD_COLOR)
-            extract_person_face(front_cv, face_path)
             
             _, encoded_front = cv2.imencode('.jpg', resize_image_if_needed(front_cv, 800), [cv2.IMWRITE_JPEG_QUALITY, 65])
             _, encoded_back = cv2.imencode('.jpg', resize_image_if_needed(back_cv, 800), [cv2.IMWRITE_JPEG_QUALITY, 65])
+            
             return encoded_front.tobytes(), encoded_back.tobytes()
 
         front_bytes_opt, back_bytes_opt = await asyncio.to_thread(process_images, front_contents, back_contents)

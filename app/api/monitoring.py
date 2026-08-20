@@ -6,7 +6,7 @@ import os
 router = APIRouter()
 
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
-    expected_key = os.getenv("X_AI_API_KEY") 
+    expected_key = os.getenv("X-AI-API-KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid or missing API Key")
     return x_ai_api_key

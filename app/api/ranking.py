@@ -7,7 +7,7 @@ import os
 router = APIRouter()
 
 def verify_s2s_key(x_ai_api_key: str = Header(None)):
-    expected_key = os.getenv("X_AI_API_KEY") 
+    expected_key = os.getenv("X-AI-API-KEY") 
     if not expected_key or not x_ai_api_key or x_ai_api_key != expected_key:
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid or missing API Key")
     return x_ai_api_key
@@ -37,7 +37,6 @@ class RankingResponse(BaseModel):
     request_id: int
     ranked_candidates: List[RankedCandidate]
     recommended_notification_count: int
-    expansion_step: int 
 
 def calculate_candidate_score(candidate: Candidate, max_distance: float = 50.0) -> float:
     trust_score = (candidate.trust_score / 100) * 0.45
@@ -58,8 +57,8 @@ def get_recommended_count(created_at: str, candidates_count: int) -> int:
         
     return min(base_count, candidates_count)
 
-@router.post("/rank-donors", response_model=RankingResponse)
-async def rank_donors(data: RankingRequest, api_key: str = Depends(verify_s2s_key)):
+@router.post("/rank-users", response_model=RankingResponse)
+async def rank_users(data: RankingRequest, api_key: str = Depends(verify_s2s_key)):
     try:
         ranked_candidates = []
         for cand in data.candidates:
@@ -92,8 +91,7 @@ async def rank_donors(data: RankingRequest, api_key: str = Depends(verify_s2s_ke
             status="success",
             request_id=data.request_id,
             ranked_candidates=ranked_candidates,
-            recommended_notification_count=recommended_count,
-            expansion_step=5
+            recommended_notification_count=recommended_count
         )
         
     except Exception as e:
