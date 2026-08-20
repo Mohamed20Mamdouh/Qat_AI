@@ -1,30 +1,14 @@
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
-class FrontOCRData(BaseModel):
-    first_name: Optional[str] = ""
-    second_name: Optional[str] = ""
-    address: Optional[str] = ""
-    nid: Optional[str] = ""
-    dob: Optional[str] = ""
-    gender: Optional[str] = ""
-
-class BackOCRData(BaseModel):
-    job: Optional[str] = ""
-    religion: Optional[str] = ""
-    marital_status: Optional[str] = ""
-    spouse_name: Optional[str] = ""
-    serial_number: Optional[str] = ""
-    expiry_date: Optional[str] = ""
-
-class StorageInfo(BaseModel):
-    front_card_path: str
-    back_card_path: str
-    person_photo_path: Optional[str] = None
+class FrontData(BaseModel):
+    first_name: str
+    second_name: str
+    nid: str
+    dob: str
+    gender: str
 
 class IDVerificationResponse(BaseModel):
     is_valid: bool
-    reasons: List[str]
-    storage_info: Optional[StorageInfo] = None
-    front_data: Optional[FrontOCRData] = None
-    back_data: Optional[BackOCRData] = None
+    message: List[str]
+    front_data: Optional[FrontData] = None
