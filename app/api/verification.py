@@ -135,23 +135,29 @@ async def verify_full_id(
         is_logically_valid = len(rejection_reasons) == 0
 
         if is_logically_valid:
-            return {
-                "is_valid": True,
-                "message": ["تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح"],
-                "front_data": {
-                    "first_name": first_name,
-                    "second_name": front_data.get("second_name", ""),
-                    "nid": clean_nid,
-                    "dob": dob,
-                    "gender": gender,
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "is_valid": True,
+                    "message": "تم التحقق من صحة البطاقة ومطابقة البيانات بنجاح",
+                    "front_data": {
+                        "first_name": first_name,
+                        "second_name": front_data.get("second_name", ""),
+                        "nid": clean_nid,
+                        "dob": dob,
+                        "gender": gender,
+                    }
                 }
-            }
+            )
         else:
-            return {
-                "is_valid": False,
-                "reasons": rejection_reasons,
-                "front_data": None
-            }
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "is_valid": False,
+                    "reasons": rejection_reasons,
+                    "front_data": None
+                }
+            )
 
     except json.JSONDecodeError:
         return JSONResponse(status_code=422, content={"detail": "فشل في قراءة البيانات المستخرجة من البطاقة."})

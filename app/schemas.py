@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 class FrontData(BaseModel):
@@ -9,6 +9,8 @@ class FrontData(BaseModel):
     gender: str
 
 class IDVerificationResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     is_valid: bool
-    message: List[str]
+    message: Optional[str] = None
+    reasons: Optional[List[str]] = None
     front_data: Optional[FrontData] = None
